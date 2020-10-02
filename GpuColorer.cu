@@ -52,8 +52,6 @@ Colorer* GpuColor(Graph* graph, int type) {
 	uint seed = 0;
 	//init << < blocks, threads >> > (seed, states, weigths, n);
 
-	printf("%d\n", graph->nodeSize);
-	colorer->numOfColors = 3;
 	// start coloring (dyn. parall.)
 	switch (type) {
 	case 0:
@@ -87,38 +85,30 @@ __global__ void init(uint seed, curandState_t* states, uint* numbers, uint n) {
 * Luby MIS colorer
 */
 __global__ void LubyColorer(Colorer * colorer, Graph * graph, uint * weights) {
-	printf("pr: %d\n", colorer->numOfColors);
-	printf("pr: %d\n", graph->nodeSize);
 	dim3 threads(THREADxBLOCK);
 	dim3 blocks((graph->nodeSize + threads.x - 1) / threads.x, 1, 1);
 
-	//printf("%d\n", blocks.x);
 	// loop on ISs covering the graph
 	while (colorer->uncoloredNodes) {
 		colorer->uncoloredNodes = false;
 		colorer->numOfColors++;
-		printf("%d\n", colorer->misNotFound);
 		while (colorer->misNotFound) {
-			colorer->uncoloredNodes = false;
+			colorer->misNotFound = false;
 			LubyfindMIS <<< blocks, threads >>> (colorer, graph, weights);
 			cudaDeviceSynchronize();
-			//printf("PROVA\n");
-			RemoveNeighs << < blocks, threads >> > (colorer,graph, weights);
+			RemoveNeighs <<< blocks, threads >>> (colorer, graph, weights);
 			cudaDeviceSynchronize();
-			//printf("PROVA\n");
 		}
-		
 		Color <<< blocks, threads >>> (colorer, graph, weights);
 		cudaDeviceSynchronize();
 	}
 }
 
 __global__ void LubyfindMIS(Colorer* colorer, Graph* graph, uint* weights) {
-	bool toBeEliminated = false;
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
 	uint numColors = colorer->numOfColors;
 
-	if (idx >= graph->nodeSize || colorer->coloring[idx] || colorer->coloring < 0) {
+	if (idx >= graph->nodeSize || colorer->coloring[idx] != 0) {
 		return;
 	}
 		
@@ -129,7 +119,8 @@ __global__ void LubyfindMIS(Colorer* colorer, Graph* graph, uint* weights) {
 		uint neighID = graph->neighs[offset + j];
 		uint degNeigh = weights[neighID];
 
-		if (colorer->coloring[neighID] == 0 && ((weights[idx] < weights[neighID]) || ((weights[idx] == weights[neighID]) && idx < neighID))) {
+		//if (colorer->coloring[neighID] == 0 && ((weights[idx] < weights[neighID]) || ((weights[idx] == weights[neighID]) && idx < neighID))) {
+		if ((colorer->coloring[neighID] == 0 || colorer->coloring[neighID] == -1) && (idx < neighID)) {
 			colorer->uncoloredNodes = true;
 			colorer->misNotFound = true;
 			return;
@@ -142,7 +133,8 @@ __global__ void LubyfindMIS(Colorer* colorer, Graph* graph, uint* weights) {
 
 __global__ void RemoveNeighs(Colorer* colorer, Graph* graph, uint* weights) {
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
-	if (idx >= graph->nodeSize ) {
+	
+	if (idx >= graph->nodeSize || colorer->coloring[idx] != 0) {
 		return;
 	}
 	
@@ -163,11 +155,11 @@ __global__ void RemoveNeighs(Colorer* colorer, Graph* graph, uint* weights) {
 __global__ void Color(Colorer* colorer, Graph* graph, uint* weights) {
 
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
-
+	colorer->misNotFound = true;
 	if (colorer->coloring[idx] == -1 && idx < graph->nodeSize) {
 		colorer->coloring[idx] = colorer->numOfColors;
 	}
-	else if (colorer->coloring[idx] == -2){
+	else if (colorer->coloring[idx] == -2 && idx < graph->nodeSize){
 		colorer->coloring[idx] = 0;
 	}
 	else {
