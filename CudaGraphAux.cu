@@ -1,5 +1,5 @@
-#include "common.h"
 #include "CudaGraphAux.h"
+#include "common.h"
 
 Graph* graphInit(uint numberNodes) {
 	Graph* graph;

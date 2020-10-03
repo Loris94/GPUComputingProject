@@ -1,10 +1,9 @@
-#define wintime
 #include <Windows.h>
 #include <stdint.h> // portable: uint64_t   MSVC: __int64 
 #include "wintime.h"
 
 
-int gettimeofday(struct wintimeval* tp)
+int gettimeofday(wintimeval* tp)
 {
     // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
     // This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)

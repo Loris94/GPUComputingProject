@@ -1,44 +1,67 @@
 
 #include "GpuColorer.h"
-
-
-#include "wintime.h"
-#include <stdio.h>
-
+////#include <stdio.h>
+//#include "wintime.c"
+//
 
 extern "C" {
+	#include "common.h"
 	#include "CpuColorer.h"
 	#include "GraphAux.h"
-	#include "Colorer.h"
 }
-#include <stdlib.h>
-
+//
+#include "Colorer.h"
+////
+//#include <stdlib.h>
+////
 #include "CudaGraphAux.h"
 
-
-
 int main(int argc, char* argv[]) {
-	Graph* graph = graphInit(1000);
-	Colorer* colorer = (Colorer*)malloc(sizeof(Colorer));
-	//TODO cambiare con argv
-	randomErdosGraph(graph, 0.01f);
-	printf("graph done\n");
-	//print(graph, 1);
+	
+	Graph* graph = graphInit(100000); //TODO cambiare con argv
+	
+	double start = seconds();
+	randomErdosGraph(graph, 0.0001f);
+	double stop = seconds();
+	printf("\nRandom Erdos graph elapsed time %f sec \n", stop - start);
+	
+	print(graph, 0);
 
 	//CPU COLOR
-	//CpuColor(graph, colorer);
-	//checkColors(colorer, graph, 1);
-	//printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-
-
-	//GPU COLOR LUBY
-	colorer = GpuColor(graph, 0);
-	checkColors(colorer, graph, 1);
+	start = seconds();
+	Colorer* colorer = CpuColor(graph);
+	stop = seconds();
+	printf("\nCPU Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-	// LUBY
+	checkColors(colorer, graph, 1);
+	
+	//GPU COLOR LUBY
+	start = seconds();
+	colorer = GpuColor(graph, 0);
+	stop = seconds();
+	printf("\nLuby Colorer elapsed time %f sec \n", stop - start);
+	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
+	checkColors(colorer, graph, 1);
+	
 	// JP 
-	// LDF
+	
+	//GPU COLOR LDF
+	start = seconds();
+	colorer = GpuColor(graph, 2);
+	stop = seconds();
+	printf("\nLDF Colorer elapsed time %f sec \n", stop - start);
+	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
+	checkColors(colorer, graph, 1);
+	
+
+
 	// DATASET
+	// FREE E CUDAFREE
+	/*double start = seconds();
+	uint* perm = randomPermutation(100000);
+	double stop = seconds();
+	printf("\nperm elapsed time %f sec \n", stop - start);*/
+
 
 	cudaDeviceReset();
 	return 0;

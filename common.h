@@ -4,7 +4,6 @@
 #include "wintime.h"
 
 
-
 typedef unsigned int uint;
 
 #ifndef _COMMON_H
@@ -72,8 +71,8 @@ typedef unsigned int uint;
 
 inline double seconds()
 {
-    struct wintimeval tp;
-    
+    wintimeval tp;
+
     int i = gettimeofday(&tp);
     return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
 }
@@ -86,6 +85,7 @@ inline void device_name() {
     printf("device %d: %s\n", dev, deviceProp.name);
     CHECK(cudaSetDevice(dev));
 }
+
 
 
 #endif // _COMMON_H

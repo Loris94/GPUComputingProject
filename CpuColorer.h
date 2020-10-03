@@ -1,5 +1,7 @@
 #pragma once
 
-int* randomPermutation(int n);
-void CpuColor(struct Graph* graph, struct Colorer* colorer);
+
+uint* randomPermutation(uint n);
+struct Colorer* CpuColor(struct Graph* graph);
 void checkColors(struct Colorer* colorer, struct Graph* graph, bool verbose);
+

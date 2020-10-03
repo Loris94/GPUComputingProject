@@ -1,20 +1,22 @@
 #pragma once
 
-#include "Colorer.h";
+#include "Colorer.h"
 #include "CpuColorer.h"
-#include "GraphAux.h";
+#include "GraphAux.h"
+#include "common.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 
 
-void CpuColor(Graph* graph, Colorer* colorer) {
+Colorer* CpuColor(Graph* graph) {
+    Colorer* colorer = (Colorer*)malloc(sizeof(Colorer));
     int numberNodes = graph->nodeSize;
     colorer->coloring = (int*)malloc(sizeof(int) * numberNodes);
     colorer->uncoloredNodes = true;
     colorer->numOfColors = 0;
     memset(colorer->coloring, 0, numberNodes * sizeof(int));
-    int* permutation = randomPermutation(numberNodes);
+    uint* permutation = randomPermutation(numberNodes);
 
     int highest = 0;
 
@@ -59,12 +61,12 @@ void CpuColor(Graph* graph, Colorer* colorer) {
         free(neighColors);
     }
     colorer->numOfColors = highest;
-
+    return colorer;
  
 }
 
-int* randomPermutation(int n) {
-    int* r = (int*) malloc(n * sizeof(int));
+uint* randomPermutation(uint n) {
+    uint* r = (uint*) malloc(n * sizeof(uint));
     // initial range of numbers
     for (int i = 0;i < n;++i) {
         r[i] = i + 1;

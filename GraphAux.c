@@ -1,9 +1,7 @@
 #include "GraphAux.h"
-#include "wintime.h"
 #include "Vector.h"
 #include <stdlib.h>
 #include <stdio.h>
-
 #include "common.h"
 
 
@@ -72,8 +70,8 @@ void randomErdosGraph(Graph* graph, float prob) {
 		if (deg(graph, i) < graph->minDeg)
 			graph->minDeg = deg(graph, i);
 	}
-	float density = (float)graph->edgeSize / (float)(n * (n - 1));
-	uint meandeg = (float)graph->edgeSize / (float)n;
+	graph->density = (float)graph->edgeSize / (float)(n * (n - 1));
+	graph->meanDeg = (float)graph->edgeSize / (float)n;
 	if (graph->minDeg == 0)
 		graph->connected = false;
 	else
@@ -91,27 +89,6 @@ void randomErdosGraph(Graph* graph, float prob) {
 		memcpy((graph->neighs + graph->cumDegs[i]), edges[i]->data, sizeof(uint) * edges[i]->size);
 }
 
-//void setup(Graph graph, uint numberNodes) {
-//	
-//	str = new GraphStruct();
-//	graph->cumDegs = new node[nn + 1]{};  
-//	
-//	graph->nodeSize = nn;
-//}
-//
-//void GraphManagedGPU() {
-//
-//}
-//
-//void memsetGPU(node_sz nn, std::string memType) {
-//	if (!memType.compare("nodes")) {
-//		CHECK(cudaMallocManaged(&str, sizeof(GraphStruct)));
-//		CHECK(cudaMallocManaged(&(graph->cumDegs), (nn + 1) * sizeof(node)));
-//	}
-//	else if (!memType.compare("edges")) {
-//		CHECK(cudaMallocManaged(&(graph->neighs), graph->edgeSize * sizeof(node)));
-//	}
-//}
 
 bool isValid(Graph* graph) {
 	for (int i = 0; i < graph->edgeSize; i++) {
@@ -138,7 +115,7 @@ uint deg(Graph* graph, node i) {
 void print(Graph* graph, bool verbose) {
 	node n = graph->nodeSize;
 	printf("** Graph (num node: %d , num edges: %d)\n", n, graph->edgeSize);
-	printf("         (min deg: %d, max deg: %d, mean deg: %d, connected: %b)\n", graph->minDeg, graph->maxDeg, graph->meanDeg, graph->connected);
+	printf("         (min deg: %d, max deg: %d, mean deg: %f, connected: %d)\n", graph->minDeg, graph->maxDeg, graph->meanDeg, graph->connected);
 
 	if (verbose) {
 		for (int i = 0; i < n; i++) {
