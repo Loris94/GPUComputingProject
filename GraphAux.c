@@ -25,6 +25,26 @@
 //	return;
 //}
 
+Graph* graphInit(uint numberNodes) {
+	Graph* graph;
+	//allocate sizes for the graph
+	//graph->cumDegs = (uint*)malloc(sizeof(uint) * numberNodes);
+	CHECK(cudaMallocManaged(&graph, sizeof(Graph), cudaMemAttachGlobal)); //TODO controllare prestazioni
+	CHECK(cudaMallocManaged(&(graph->cumDegs), (numberNodes + 1) * sizeof(uint), cudaMemAttachGlobal));
+
+	//allocate size for the neighs
+	//graph->neighs = (node*)malloc(sizeof(node) * numberNodes);
+
+	graph->nodeSize = numberNodes;
+	graph->edgeSize = 0;
+	graph->maxDeg = 0;
+	graph->minDeg = 0;
+	graph->meanDeg = 0.0f;
+	graph->connected = true;
+	graph->density = 0;
+	return graph;
+}
+
 
 
 void randomErdosGraph(Graph* graph, float prob) {
@@ -127,4 +147,61 @@ void print(Graph* graph, bool verbose) {
 		}
 		printf("\n");
 	}
+}
+
+void writeGraphToFile(Graph* graph, char* name) { // write order from GraphAux.h
+	FILE* fp = fopen(name, "wb");
+	if (fp == NULL) {
+		printf("file error\n");
+		return;
+	}
+	uint a = graph->nodeSize;
+	fwrite(&graph->nodeSize, sizeof(uint), 1, fp);
+	fwrite(&graph->edgeSize, sizeof(uint), 1, fp);
+	printf("wrote ");
+	for (int i = 0; i < graph->nodeSize + 1; i++) {
+		if (!fwrite(&graph->cumDegs[i], sizeof(uint), 1, fp)) {
+			printf("write error\n");
+		}
+		//printf("%d ", graph->cumDegs[i]);
+	}
+	printf("\n");
+	for (int i = 0; i < graph->edgeSize; i++) {
+		fwrite(&graph->neighs[i], sizeof(uint), 1, fp);
+	}
+	fwrite(&graph->density, sizeof(float), 1, fp);
+	fwrite(&graph->maxDeg, sizeof(uint), 1, fp);
+	fwrite(&graph->minDeg, sizeof(uint), 1, fp);
+	fwrite(&graph->meanDeg, sizeof(float), 1, fp);
+	fwrite(&graph->connected, sizeof(bool), 1, fp);
+
+	fclose(fp);
+}
+
+Graph* readGraphFromFile(char* name) {
+	FILE* fp = fopen(name, "rb");
+	uint numberNodes;
+	fread(&numberNodes, sizeof(uint), 1, fp);
+	Graph* graph = graphInit(numberNodes);
+	graph->nodeSize = numberNodes;
+	fread(&graph->edgeSize, sizeof(uint), 1, fp);
+	printf("read  ");
+	for (int i = 0; i < graph->nodeSize + 1; i++) {
+		fread(&graph->cumDegs[i], sizeof(uint), 1, fp);
+		//printf("%d ", graph->cumDegs[i]);
+	}
+	printf("\n");
+	CHECK(cudaMallocManaged(&(graph->neighs), graph->edgeSize * sizeof(node), cudaMemAttachGlobal));
+	for (int i = 0; i < graph->edgeSize; i++) {
+		fread(&graph->neighs[i], sizeof(node), 1, fp);
+	}
+	fread(&graph->density, sizeof(float), 1, fp);
+	fread(&graph->maxDeg, sizeof(uint), 1, fp);
+	fread(&graph->minDeg, sizeof(uint), 1, fp);
+	fread(&graph->meanDeg, sizeof(float), 1, fp);
+	fread(&graph->connected, sizeof(bool), 1, fp);
+
+
+	fclose(fp);
+	return graph;
 }

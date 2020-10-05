@@ -12,6 +12,7 @@ __global__ void colorMIS(struct Colorer* colorer, struct Graph* graph, uint* wei
 __global__ void RemoveNeighs(struct Colorer* colorer, struct Graph* graph, uint* weights);
 void managedRandomPermutation(uint* permutation, uint n);
 __global__ void init(uint seed, curandState_t* states, uint* numbers, uint n);
+void cpuInit(uint* numbers, uint n);
 __global__ void LDFcolorer(Colorer* colorer, Graph* graph, uint* weights);
 __global__ void LDFfindIS(Colorer* colorer, Graph* graph, uint* weights);
-__global__ void colorIS(Colorer* colorer, Graph* graph, uint* weights);
+__global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights);

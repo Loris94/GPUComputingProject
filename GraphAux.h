@@ -17,6 +17,9 @@ typedef struct Graph {
 } Graph;
 
 //void graphInit(Graph* graph, uint numberNodes);
+Graph* graphInit(uint numberNodes);
 void randomErdosGraph(Graph* graph, float prob);
 void print(Graph* graph, bool verbose);
 bool isValid(Graph* graph);
+void writeGraphToFile(Graph* graph, char* name);
+Graph* readGraphFromFile(char* name);
