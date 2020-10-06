@@ -1,14 +1,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-
-
 #include "GpuColorer.h"
-////#include <stdio.h>
-//#include "wintime.c"
-//
-
 extern "C" {
 
 	#include "getopt.h"
@@ -16,11 +9,8 @@ extern "C" {
 	#include "CpuColorer.h"
 	#include "GraphAux.h"
 }
-//
 #include "Colorer.h"
-////
-//#include <stdlib.h>
-////
+
 
 struct options{
 	int numberNodes = 0;
@@ -31,6 +21,12 @@ struct options{
 } options;
 
 void getArgs(int argc, char* argv[]);
+
+void temp(Colorer* colorer, Graph* graph) {
+	for (int i = 0; i < graph->nodeSize; i++) {
+
+	}
+}
 
 
 int main(int argc, char* argv[]) {
@@ -71,7 +67,7 @@ int main(int argc, char* argv[]) {
 	printf("\nCPU Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
 	checkColors(colorer, graph, 1);
-	cudaFree(colorer);
+	//cudaFree(colorer);
 
 	
 	//GPU COLOR LUBY
@@ -81,9 +77,16 @@ int main(int argc, char* argv[]) {
 	printf("\nLuby Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
 	checkColors(colorer, graph, 1);
-	cudaFree(colorer);
+	//cudaFree(colorer);
 	
-	// JP 
+	//GPU COLOR JP
+	start = seconds();
+	colorer = GpuColor(graph, 1);
+	stop = seconds();
+	printf("\nJP Colorer elapsed time %f sec \n", stop - start);
+	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
+	checkColors(colorer, graph, 1);
+	//cudaFree(colorer);
 	
 	//GPU COLOR LDF
 	start = seconds();
@@ -92,11 +95,12 @@ int main(int argc, char* argv[]) {
 	printf("\nLDF Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
 	checkColors(colorer, graph, 1);
-	cudaFree(colorer);
+	//cudaFree(colorer);
 
 
-	// DATASET
+	// STREAMS
 	// FREE E CUDAFREE
+
 
 	cudaDeviceReset();
 	return 0;

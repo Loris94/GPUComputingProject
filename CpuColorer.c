@@ -91,6 +91,9 @@ void checkColors(Colorer* colorer, Graph* graph, bool verbose) {
         uint deg = graph->cumDegs[i + 1] - graph->cumDegs[i];
         node* neighs = graph->neighs;
 
+        if (colorer->coloring[i] == 0 || colorer->coloring[i] == -1 || colorer->coloring[i] == -2) {
+            printf("error, node %d at %d\n", i, colorer->coloring[i]);
+        }
         //printf("node %d has neigh: ", i);
         //for (int j = 0; j < deg; j++) {
         //	printf("%d ", neighs[str->cumDegs[i]+j]);

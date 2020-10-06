@@ -1,4 +1,4 @@
-
+﻿
 #include "GpuColorer.h"
 #include "GraphAux.h"
 #include <stdio.h>
@@ -28,7 +28,7 @@ Colorer* GpuColor(Graph* graph, int type) {
 	colorer->misNotFound = true;
 	// cudaMalloc for arrays of struct Coloring;
 	CHECK(cudaMallocManaged(&(colorer->coloring), n * sizeof(uint)));
-	memset(colorer->coloring, 0, n);
+	memset(colorer->coloring, 0, n * sizeof(uint));
 	
 	// allocate space on the GPU for the random states
 	curandState_t* states;
@@ -43,34 +43,32 @@ Colorer* GpuColor(Graph* graph, int type) {
 
 	// start coloring (dyn. parall.)
 	switch (type) {
-	case 0:
-		CHECK(cudaMallocManaged(&permutation, n * sizeof(uint)));
-		managedRandomPermutation(permutation, n);
+	case 0: 		// LUBY 
+		permutation = managedRandomPermutation(n);
 		LubyColorer <<< 1, 1 >>> (colorer, graph, permutation);
 		cudaDeviceSynchronize();
+		CHECK(cudaFree(permutation));
 		break;
-	case 1:
-		CHECK(cudaMalloc((void**)&states, n * sizeof(curandState_t)));
-		CHECK(cudaMalloc((void**)&weigths, n * sizeof(uint)));
-		cpuInit(weigths, n);
-		//init << < blocks, threads >> > (seed, states, weigths, n);
-		//LubyJPcolorer << < 1, 1 >> > (colorer, graph, permutation);
-		cudaDeviceSynchronize();
-		colorer->numOfColors = findMax(colorer, n);
-		cudaFree(states);
-		cudaFree(weigths);
-		break;
-	case 2:
+	case 1: // JP
 		//CHECK(cudaMalloc((void**)&states, n * sizeof(curandState_t)));
-		//CHECK(cudaMalloc((void**)&weigths, n * sizeof(uint)));
-		CHECK(cudaMallocManaged(&weigths, n * sizeof(uint)));
-		cpuInit(weigths, n);
+		weigths = cpuInit(n);
 		//init << < blocks, threads >> > (seed, states, weigths, n);
 		//cudaDeviceSynchronize();
-		LDFcolorer << < 1, 1 >> > (colorer, graph, weigths);
+		JPcolorer <<< 1, 1 >>> (colorer, graph, weigths);
 		cudaDeviceSynchronize();
 		colorer->numOfColors = findMax(colorer, n);
-		cudaFree(states);
+		//cudaFree(states);
+		cudaFree(weigths);
+		break;
+	case 2: // LDF
+		//CHECK(cudaMalloc((void**)&states, n * sizeof(curandState_t)));
+		weigths = cpuInit(n);
+		//init << < blocks, threads >> > (seed, states, weigths, n);
+		//cudaDeviceSynchronize();
+		LDFcolorer <<< 1, 1 >>> (colorer, graph, weigths);
+		cudaDeviceSynchronize();
+		colorer->numOfColors = findMax(colorer, n);
+		//cudaFree(states);
 		cudaFree(weigths);
 		break;
 	}
@@ -164,7 +162,9 @@ __global__ void colorMIS(Colorer* colorer, Graph* graph, uint* weights) {
 
 }
 
-void managedRandomPermutation(uint* permutation, uint n) {
+uint* managedRandomPermutation(uint n) {
+	uint* permutation;
+	CHECK(cudaMallocManaged(&permutation, n * sizeof(uint)));
 	//uint* permutation = (uint*)malloc(n * sizeof(uint));
 	// initial range of numbers
 	for (int i = 0;i < n;++i) {
@@ -180,7 +180,7 @@ void managedRandomPermutation(uint* permutation, uint n) {
 		permutation[i] = permutation[j];
 		permutation[j] = temp;
 	}
-	
+	return permutation;
 }
 
 /**
@@ -194,11 +194,58 @@ __global__ void init(uint seed, curandState_t* states, uint* numbers, uint n) {
 	numbers[idx] = curand(&states[idx]);
 }
 
-void cpuInit(uint* numbers, uint n) {
+uint* cpuInit(uint n) {
+	uint* numbers;
+	CHECK(cudaMallocManaged(&numbers, n * sizeof(uint)));
 	for (int i = 0; i < n; i++) {
 		numbers[i] = rand();
 	}
+	return numbers;
 }
+
+/**
+ * Luby IS & Lones−Plassmann colorer
+ */
+__global__ void JPcolorer(Colorer* colorer, Graph* graph, uint* weights) {
+	dim3 threads(THREADxBLOCK);
+	dim3 blocks((graph->nodeSize + threads.x - 1) / threads.x, 1, 1);
+
+	// loop on ISs covering the graph
+	colorer->numOfColors = 0;
+	while (colorer->uncoloredNodes) {
+		colorer->uncoloredNodes = false;
+		colorer->numOfColors++;
+		JPfindIS << < blocks, threads >> > (colorer, graph, weights);
+		cudaDeviceSynchronize();
+		colorIsWithMin << < blocks, threads >> > (colorer, graph, weights);
+		cudaDeviceSynchronize();
+	}
+}
+
+__global__ void JPfindIS(Colorer* colorer, Graph* graph, uint* weights) {
+	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
+	//uint numColors = colorer->numOfColors;
+	if (idx >= graph->nodeSize)
+		return;
+
+	if (colorer->coloring[idx])
+		return;
+
+	uint offset = graph->cumDegs[idx];
+	uint deg = graph->cumDegs[idx + 1] - graph->cumDegs[idx];
+
+	for (uint j = 0; j < deg; j++) {
+		uint neighID = graph->neighs[offset + j];
+		uint degNeigh = weights[neighID];
+
+		if (colorer->coloring[neighID] <= 0 && ((weights[idx] < weights[neighID]) || ((weights[idx] == weights[neighID]) && idx < neighID))) {
+			colorer->uncoloredNodes = true;
+			return;
+		}
+	}
+	colorer->coloring[idx] = -1;
+}
+
 
 /**
 *LDF colorer
@@ -292,11 +339,14 @@ __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights) {
 
 int findMax(Colorer* colorer, int n) {
 	int max = 0;
+	int index = 0;
 	for (int i = 0; i < n; i++) {
 		if (colorer->coloring[i] > max) {
 			max = colorer->coloring[i];
+			index = i;
 		}
 	}
+	//printf("max %d at index %d\n", max, index);
 	return max;
 }
 
