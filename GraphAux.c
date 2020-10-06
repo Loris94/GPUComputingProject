@@ -158,14 +158,11 @@ void writeGraphToFile(Graph* graph, char* name) { // write order from GraphAux.h
 	uint a = graph->nodeSize;
 	fwrite(&graph->nodeSize, sizeof(uint), 1, fp);
 	fwrite(&graph->edgeSize, sizeof(uint), 1, fp);
-	printf("wrote ");
 	for (int i = 0; i < graph->nodeSize + 1; i++) {
 		if (!fwrite(&graph->cumDegs[i], sizeof(uint), 1, fp)) {
 			printf("write error\n");
 		}
-		//printf("%d ", graph->cumDegs[i]);
 	}
-	printf("\n");
 	for (int i = 0; i < graph->edgeSize; i++) {
 		fwrite(&graph->neighs[i], sizeof(uint), 1, fp);
 	}
@@ -180,17 +177,18 @@ void writeGraphToFile(Graph* graph, char* name) { // write order from GraphAux.h
 
 Graph* readGraphFromFile(char* name) {
 	FILE* fp = fopen(name, "rb");
+	if (fp == NULL) {
+		printf("file error\n");
+		exit(2);
+	}
 	uint numberNodes;
 	fread(&numberNodes, sizeof(uint), 1, fp);
 	Graph* graph = graphInit(numberNodes);
 	graph->nodeSize = numberNodes;
 	fread(&graph->edgeSize, sizeof(uint), 1, fp);
-	printf("read  ");
 	for (int i = 0; i < graph->nodeSize + 1; i++) {
 		fread(&graph->cumDegs[i], sizeof(uint), 1, fp);
-		//printf("%d ", graph->cumDegs[i]);
 	}
-	printf("\n");
 	CHECK(cudaMallocManaged(&(graph->neighs), graph->edgeSize * sizeof(node), cudaMemAttachGlobal));
 	for (int i = 0; i < graph->edgeSize; i++) {
 		fread(&graph->neighs[i], sizeof(node), 1, fp);

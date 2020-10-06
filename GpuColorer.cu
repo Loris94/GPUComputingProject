@@ -55,6 +55,8 @@ Colorer* GpuColor(Graph* graph, int type) {
 		cpuInit(weigths, n);
 		//init << < blocks, threads >> > (seed, states, weigths, n);
 		//LubyJPcolorer << < 1, 1 >> > (colorer, graph, permutation);
+		cudaDeviceSynchronize();
+		colorer->numOfColors = findMax(colorer, n);
 		cudaFree(states);
 		cudaFree(weigths);
 		break;
@@ -67,6 +69,7 @@ Colorer* GpuColor(Graph* graph, int type) {
 		//cudaDeviceSynchronize();
 		LDFcolorer << < 1, 1 >> > (colorer, graph, weigths);
 		cudaDeviceSynchronize();
+		colorer->numOfColors = findMax(colorer, n);
 		cudaFree(states);
 		cudaFree(weigths);
 		break;
@@ -253,50 +256,13 @@ __global__ void LDFfindIS(Colorer* colorer, Graph* graph, uint* weights) {
  */
 __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights) {
 	
-
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (colorer->coloring[idx] == -1 && idx < graph->nodeSize) {
-		
-		/*uint* index;
-		cudaMalloc((void**)&index, sizeof(uint));
-		*index = idx;
-
-		uint deg = graph->cumDegs[idx + 1] - graph->cumDegs[idx];
-		
-		uint* min;
-		cudaMalloc((void**)&min, sizeof(uint));
-		*min = deg;
-
-		uint* degThr;
-		cudaMalloc((void**)&degThr, sizeof(uint));
-		*degThr = deg;
-
-		dim3 threads(32);
-		dim3 blocks((deg + threads.x - 1) / threads.x, 1, 1);
-
-		findMin<<<blocks,threads>>>(colorer, graph, min, index, degThr);
-		cudaDeviceSynchronize();
-
-		colorer->coloring[idx] = *min;
-		
-
-		cudaFree(index);
-		cudaFree(min);
-		cudaFree(degThr);*/
-
 
 		uint offset = graph->cumDegs[idx];
 		uint deg = graph->cumDegs[idx + 1] - graph->cumDegs[idx];
-		int* neighColors;
-		cudaMalloc((void**)&neighColors, sizeof(int) * deg);
 		
-		//memset(colorer->coloring, 0, numberNodes);
-		for (uint j = 0; j < deg; j++) {
-			uint neighID = graph->neighs[offset + j];
-			neighColors[j] = colorer->coloring[neighID];
-		}
-
 		//find lowest color available
 		int lowest = 0;
 
@@ -304,7 +270,8 @@ __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights) {
 			bool candidate = true;
 			lowest = k;
 			for (uint j = 0; j < deg; j++) {
-				if (neighColors[j] == k) {
+				uint neighID = graph->neighs[offset + j];
+				if (colorer->coloring[neighID] == k) {
 					candidate = false;
 					break;
 				}
@@ -313,11 +280,9 @@ __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights) {
 				break;
 			}
 		}
-		
-		colorer->coloring[idx] = lowest;
-		cudaFree(neighColors);
 
-		//colorer->coloring[idx] = colorer->numOfColors;
+		colorer->coloring[idx] = lowest;
+
 	}
 	else {
 		return;
@@ -325,20 +290,14 @@ __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights) {
 
 }
 
-__global__ void findMin(Colorer* colorer, Graph* graph, uint* min, uint* index, uint* deg) {
-	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
-	if (idx > *deg) {
-		return;
-	}
-	uint offset = graph->cumDegs[*index];
-	for (int i = 0; i < *deg; i++) {
-		uint neighId = graph->neighs[offset + i];
-		if (idx + 1 == colorer->coloring[neighId]) {
-			return;
+int findMax(Colorer* colorer, int n) {
+	int max = 0;
+	for (int i = 0; i < n; i++) {
+		if (colorer->coloring[i] > max) {
+			max = colorer->coloring[i];
 		}
 	}
-	atomicMin(min, idx+1);
-	
+	return max;
 }
 
 

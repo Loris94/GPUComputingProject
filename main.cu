@@ -21,7 +21,6 @@ extern "C" {
 ////
 //#include <stdlib.h>
 ////
-//#include "CudaGraphAux.h"
 
 struct options{
 	int numberNodes = 0;
@@ -33,16 +32,6 @@ struct options{
 
 void getArgs(int argc, char* argv[]);
 
-// temp function
-void findMax(Colorer* colorer, int n) {
-	int max = 0;
-	for (int i = 0; i < n; i++) {
-		if (colorer->coloring[i] > max) {
-			max = colorer->coloring[i];
-		}
-	}
-	printf("max is: %d\n", max);
-}
 
 int main(int argc, char* argv[]) {
 
@@ -103,10 +92,9 @@ int main(int argc, char* argv[]) {
 	printf("\nLDF Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
 	checkColors(colorer, graph, 1);
-	
-	
-	findMax(colorer, graph->nodeSize);
 	cudaFree(colorer);
+
+
 	// DATASET
 	// FREE E CUDAFREE
 

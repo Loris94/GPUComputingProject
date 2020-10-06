@@ -16,3 +16,4 @@ void cpuInit(uint* numbers, uint n);
 __global__ void LDFcolorer(Colorer* colorer, Graph* graph, uint* weights);
 __global__ void LDFfindIS(Colorer* colorer, Graph* graph, uint* weights);
 __global__ void colorIsWithMin(Colorer* colorer, Graph* graph, uint* weights);
+int findMax(Colorer* colorer, int n);
