@@ -66,8 +66,17 @@ int main(int argc, char* argv[]) {
 	stop = seconds();
 	printf("\nCPU Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-	checkColors(colorer, graph, 1);
-	//cudaFree(colorer);
+	checkColors(colorer, graph, 0);
+	cudaFree(colorer);
+
+	//CPU LDF COLOR
+	start = seconds();
+	colorer = CpuLDFColor(graph);
+	stop = seconds();
+	printf("\nCPU LDF Colorer elapsed time %f sec \n", stop - start);
+	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
+	checkColors(colorer, graph, 0);
+	cudaFree(colorer);
 
 	
 	//GPU COLOR LUBY
@@ -76,8 +85,8 @@ int main(int argc, char* argv[]) {
 	stop = seconds();
 	printf("\nLuby Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-	checkColors(colorer, graph, 1);
-	//cudaFree(colorer);
+	checkColors(colorer, graph, 0);
+	cudaFree(colorer);
 	
 	//GPU COLOR JP
 	start = seconds();
@@ -85,8 +94,8 @@ int main(int argc, char* argv[]) {
 	stop = seconds();
 	printf("\nJP Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-	checkColors(colorer, graph, 1);
-	//cudaFree(colorer);
+	checkColors(colorer, graph, 0);
+	cudaFree(colorer);
 	
 	//GPU COLOR LDF
 	start = seconds();
@@ -94,8 +103,8 @@ int main(int argc, char* argv[]) {
 	stop = seconds();
 	printf("\nLDF Colorer elapsed time %f sec \n", stop - start);
 	printf("num of colors: %d\nhighest degree: %d\n", colorer->numOfColors, graph->maxDeg);
-	checkColors(colorer, graph, 1);
-	//cudaFree(colorer);
+	checkColors(colorer, graph, 0);
+	cudaFree(colorer);
 
 
 	// STREAMS

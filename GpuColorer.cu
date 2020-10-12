@@ -21,11 +21,11 @@ extern "C" {
 Colorer* GpuColor(Graph* graph, int type) {
 	Colorer* colorer;
 
-	//Graph* graph = graphInit(graph, 1000);
 	CHECK(cudaMallocManaged(&colorer, sizeof(Colorer)));
 	uint n = graph->nodeSize;
 	colorer->uncoloredNodes = true;
 	colorer->misNotFound = true;
+
 	// cudaMalloc for arrays of struct Coloring;
 	CHECK(cudaMallocManaged(&(colorer->coloring), n * sizeof(uint)));
 	memset(colorer->coloring, 0, n * sizeof(uint));
@@ -40,10 +40,10 @@ Colorer* GpuColor(Graph* graph, int type) {
 	dim3 blocks((graph->nodeSize + threads.x - 1) / threads.x, 1, 1);
 	uint seed = 0;
 	
-
+	
 	// start coloring (dyn. parall.)
 	switch (type) {
-	case 0: 		// LUBY 
+	case 0: // LUBY 
 		permutation = managedRandomPermutation(n);
 		LubyColorer <<< 1, 1 >>> (colorer, graph, permutation);
 		cudaDeviceSynchronize();
@@ -196,6 +196,7 @@ __global__ void init(uint seed, curandState_t* states, uint* numbers, uint n) {
 
 uint* cpuInit(uint n) {
 	uint* numbers;
+	srand(time(NULL));
 	CHECK(cudaMallocManaged(&numbers, n * sizeof(uint)));
 	for (int i = 0; i < n; i++) {
 		numbers[i] = rand();

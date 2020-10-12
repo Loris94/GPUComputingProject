@@ -23,47 +23,126 @@ Colorer* CpuColor(Graph* graph) {
     //color whole graph
     for (int i = 0; i < graph->nodeSize; i++) {
         int v = permutation[i]-1;
-        uint offset = graph->cumDegs[v];
-        uint deg = graph->cumDegs[v + 1] - graph->cumDegs[v];
-        int* neighColors = (int*)malloc(sizeof(int) * deg);
-        //memset(colorer->coloring, 0, numberNodes);
-        for (uint j = 0; j < deg; j++) {
-            uint neighID = graph->neighs[offset + j];
-            neighColors[j] = colorer->coloring[neighID];
-        }
 
-        //find lowest color available
-        int lowest = 0;
-        
-        for (uint k = 1; k <= deg+1; k++) { // <= because there are at most n+1 colors, we start from 0 because tha 0 is for non-colored
-            bool candidate = true;
-            lowest = k;
-            for (uint j = 0; j < deg; j++) {
-                if (neighColors[j] == k) {
-                    candidate = false;
-                    break;
-                }
-            }
-            if (candidate) {
-                break;
-            }
-        }
+        int color = colorWithLowest(colorer, graph, v);
 
-        if (lowest!=0) {
-            colorer->coloring[v] = lowest;
-            if (lowest > highest) {
-                highest = lowest;
+        //uint offset = graph->cumDegs[v];
+        //uint deg = graph->cumDegs[v + 1] - graph->cumDegs[v];
+        //int* neighColors = (int*)malloc(sizeof(int) * deg);
+        ////memset(colorer->coloring, 0, numberNodes);
+        //for (uint j = 0; j < deg; j++) {
+        //    uint neighID = graph->neighs[offset + j];
+        //    neighColors[j] = colorer->coloring[neighID];
+        //}
+
+        ////find lowest color available
+        //int lowest = 0;
+        //
+        //for (uint k = 1; k <= deg+1; k++) { // <= because there are at most n+1 colors, we start from 0 because tha 0 is for non-colored
+        //    bool candidate = true;
+        //    lowest = k;
+        //    for (uint j = 0; j < deg; j++) {
+        //        if (neighColors[j] == k) {
+        //            candidate = false;
+        //            break;
+        //        }
+        //    }
+        //    if (candidate) {
+        //        break;
+        //    }
+        //}
+
+        //if (lowest!=0) {
+        //    colorer->coloring[v] = lowest;
+        //    if (lowest > colorer->numOfColors) {
+        //        colorer->numOfColors = lowest;
+        //    }
+        //}
+        //else {
+        //    printf("COLOR ERROR\n");
+        //}
+        //free(neighColors);
+        if (color != 0) {
+            colorer->coloring[v] = color;
+            if (color > colorer->numOfColors) {
+                colorer->numOfColors = color;
             }
         }
         else {
             printf("COLOR ERROR\n");
+            return;
         }
-        free(neighColors);
+
     }
-    colorer->numOfColors = highest;
+    
     return colorer;
  
 }
+
+Colorer* CpuLDFColor(Graph* graph) {
+    uint coloredNodes = 0;
+    Colorer* colorer = (Colorer*)malloc(sizeof(Colorer));
+    int numberNodes = graph->nodeSize;
+    uint* weigths = cpuWeigthInit(numberNodes);
+    colorer->coloring = malloc(sizeof(int) * numberNodes);
+    colorer->uncoloredNodes = true;
+    colorer->numOfColors = 0;
+    memset(colorer->coloring, 0, numberNodes * sizeof(int));
+    while (coloredNodes < graph->nodeSize) {
+        int max = -1;
+        int index = 0;
+        for (int i = 0; i < graph->nodeSize; i++) {
+            if (colorer->coloring[i] == 0) {
+                int deg = graph->cumDegs[i + 1] - graph->cumDegs[i];
+                if (deg > max) {
+                    max = deg;
+                    index = i;
+                }
+                else if (deg == max && weigths[i]>weigths[index]) {
+                    index = i;
+                }
+            }
+        }
+        int color = colorWithLowest(colorer, graph, index);
+        if (color != 0) {
+            colorer->coloring[index] = color;
+            coloredNodes++;
+            if (color > colorer->numOfColors) {
+                colorer->numOfColors = color;
+            }
+        }
+        else {
+            printf("COLOR ERROR\n");
+            return;
+        }
+    }
+    return colorer;
+}
+
+int colorWithLowest(Colorer* colorer, Graph* graph, int i) {
+    uint offset = graph->cumDegs[i];
+    uint deg = graph->cumDegs[i + 1] - graph->cumDegs[i];
+    int lowest = 0;
+
+    for (uint k = 1; k <= deg + 1; k++) { // <= because there are at most n+1 colors, we start from 1 because 0 is for non-colored
+        bool candidate = true;
+        lowest = k;
+        for (uint j = 0; j < deg; j++) {
+            uint neighID = graph->neighs[offset + j];
+
+            if (colorer->coloring[neighID] == k) {
+                candidate = false;
+                break;
+            }
+        }
+        if (candidate) {
+            break;
+        }
+    }
+   
+    return lowest;
+}
+
 
 uint* randomPermutation(uint n) {
     uint* r = (uint*) malloc(n * sizeof(uint));
@@ -84,6 +163,16 @@ uint* randomPermutation(uint n) {
     return r;
 }
 
+uint* cpuWeigthInit(int n) {
+    uint* numbers = malloc(n * sizeof(uint));
+    for (int i = 0; i < n; i++) {
+        numbers[i] = rand();
+    }
+    return numbers;
+}
+
+
+
 void checkColors(Colorer* colorer, Graph* graph, bool verbose) {
     uint n = graph->nodeSize;
     bool flag = true;
@@ -94,20 +183,19 @@ void checkColors(Colorer* colorer, Graph* graph, bool verbose) {
         if (colorer->coloring[i] == 0 || colorer->coloring[i] == -1 || colorer->coloring[i] == -2) {
             printf("error, node %d at %d\n", i, colorer->coloring[i]);
         }
-        //printf("node %d has neigh: ", i);
-        //for (int j = 0; j < deg; j++) {
-        //	printf("%d ", neighs[str->cumDegs[i]+j]);
-        //}
-        //printf("\n");
         for (int j = 0; j < deg; j++) {
             if (colorer->coloring[i] == colorer->coloring[neighs[graph->cumDegs[i] + j]]) {
                 printf("\nWRONG: node %d and his neighbor %d have the color %d\n", i, neighs[graph->cumDegs[i] + j], colorer->coloring[i]);
                 flag = false;
             }
         }
+        if (verbose) {
+            printf("%d ", colorer->coloring[i]);
+        }
     }
+    printf("\n");
     if (flag) {
-        printf("\nColor Good\n");
+        printf("Color Good\n");
     }
     return;
 }
