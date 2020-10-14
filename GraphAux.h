@@ -16,7 +16,6 @@ typedef struct Graph {
 	bool connected;
 } Graph;
 
-//void graphInit(Graph* graph, uint numberNodes);
 Graph* graphInit(uint numberNodes);
 void randomErdosGraph(Graph* graph, float prob);
 void print(Graph* graph, bool verbose);

@@ -23,45 +23,8 @@ Colorer* CpuColor(Graph* graph) {
     //color whole graph
     for (int i = 0; i < graph->nodeSize; i++) {
         int v = permutation[i]-1;
-
         int color = colorWithLowest(colorer, graph, v);
 
-        //uint offset = graph->cumDegs[v];
-        //uint deg = graph->cumDegs[v + 1] - graph->cumDegs[v];
-        //int* neighColors = (int*)malloc(sizeof(int) * deg);
-        ////memset(colorer->coloring, 0, numberNodes);
-        //for (uint j = 0; j < deg; j++) {
-        //    uint neighID = graph->neighs[offset + j];
-        //    neighColors[j] = colorer->coloring[neighID];
-        //}
-
-        ////find lowest color available
-        //int lowest = 0;
-        //
-        //for (uint k = 1; k <= deg+1; k++) { // <= because there are at most n+1 colors, we start from 0 because tha 0 is for non-colored
-        //    bool candidate = true;
-        //    lowest = k;
-        //    for (uint j = 0; j < deg; j++) {
-        //        if (neighColors[j] == k) {
-        //            candidate = false;
-        //            break;
-        //        }
-        //    }
-        //    if (candidate) {
-        //        break;
-        //    }
-        //}
-
-        //if (lowest!=0) {
-        //    colorer->coloring[v] = lowest;
-        //    if (lowest > colorer->numOfColors) {
-        //        colorer->numOfColors = lowest;
-        //    }
-        //}
-        //else {
-        //    printf("COLOR ERROR\n");
-        //}
-        //free(neighColors);
         if (color != 0) {
             colorer->coloring[v] = color;
             if (color > colorer->numOfColors) {

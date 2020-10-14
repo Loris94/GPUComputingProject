@@ -5,35 +5,13 @@
 #include "common.h"
 
 
-
-//void graphInit(Graph* graph, uint numberNodes) {
-//	//allocate sizes for the graph
-//	//graph->cumDegs = (uint*)malloc(sizeof(uint) * numberNodes);
-//	CHECK(cudaMallocManaged(graph, sizeof(Graph), cudaMemAttachGlobal)); //TODO controllare prestazioni
-//	CHECK(cudaMallocManaged(&(graph->cumDegs), (numberNodes + 1) * sizeof(uint), cudaMemAttachGlobal));
-//
-//	//allocate size for the neighs
-//	//graph->neighs = (node*)malloc(sizeof(node) * numberNodes);
-//	
-//	graph->nodeSize = numberNodes;
-//	graph->edgeSize = 0;
-//	graph->maxDeg = 0;
-//	graph->minDeg = 0;
-//	graph->meanDeg = 0.0f;
-//	graph->connected = true;
-//	graph->density = 0;
-//	return;
-//}
-
 Graph* graphInit(uint numberNodes) {
 	Graph* graph;
 	//allocate sizes for the graph
-	//graph->cumDegs = (uint*)malloc(sizeof(uint) * numberNodes);
-	CHECK(cudaMallocManaged(&graph, sizeof(Graph), cudaMemAttachGlobal)); //TODO controllare prestazioni
+	CHECK(cudaMallocManaged(&graph, sizeof(Graph), cudaMemAttachGlobal)); 
 	CHECK(cudaMallocManaged(&(graph->cumDegs), (numberNodes + 1) * sizeof(uint), cudaMemAttachGlobal));
 
 	//allocate size for the neighs
-	//graph->neighs = (node*)malloc(sizeof(node) * numberNodes);
 
 	graph->nodeSize = numberNodes;
 	graph->edgeSize = 0;
@@ -49,11 +27,10 @@ Graph* graphInit(uint numberNodes) {
 
 void randomErdosGraph(Graph* graph, float prob) {
 	if (prob < 0 || prob > 1) {
-		printf("[Graph] Warning: Probability not valid (set p = 0.5)!!\n"); //TODO
+		printf("[Graph] Warning: Probability not valid (set p = 0.5)!!\n"); 
+		prob = 0.5;
 	}
 	
-	//printf("RANDMAX: %d\n", RAND_MAX);
-	//rand();
 	srand(time(NULL));   // Initialization, should only be called once.
 	
 	uint n = graph->nodeSize;
@@ -67,9 +44,8 @@ void randomErdosGraph(Graph* graph, float prob) {
 	for (int i = 0; i < n - 1; i++) {
 		for (int j = i + 1; j < n; j++) {
 			float r = (float) rand() / (float)RAND_MAX;
-			//printf("rand: %d\n", r);
+			
 			if (r < prob) {
-				//printf("i: %d - j: %d - edges[i].size: %d - edges[j].size: %d - &edges[i]: %x &edges[j]: %x\n", i, j, edges[i]->size, edges[j]->size, &edges[i], &edges[j]);
 				vec_push(edges[i], j);
 				vec_push(edges[j], i);
 				graph->cumDegs[i + 1]++;
@@ -96,12 +72,6 @@ void randomErdosGraph(Graph* graph, float prob) {
 		graph->connected = false;
 	else
 		graph->connected = true;
-
-	// manage memory for edges with cuda unified memory
-	/*if (gpuenabled)
-		memsetgpu(n, "edges");
-	else
-		graph->neighs = new node[graph->edgeSize]{ };*/
 
 	CHECK(cudaMallocManaged(&(graph->neighs), graph->edgeSize * sizeof(node), cudaMemAttachGlobal));
 

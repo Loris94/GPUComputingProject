@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include "GpuColorer.h"
 extern "C" {
-
 	#include "getopt.h"
 	#include "common.h"
 	#include "CpuColorer.h"
@@ -12,28 +11,13 @@ extern "C" {
 #include "Colorer.h"
 
 
-struct options{
-	int numberNodes = 0;
-	float probability = 0;
-	bool toWrite = false;
-	char* fileName = "";
-	bool toRead = 0;
-} options;
-
-void getArgs(int argc, char* argv[]);
-
-void temp(Colorer* colorer, Graph* graph) {
-	for (int i = 0; i < graph->nodeSize; i++) {
-
-	}
-}
-
-
 int main(int argc, char* argv[]) {
 
 	Graph* graph;
 	Colorer* colorer;
 	double start, stop;
+
+	initializeOptions();
 
 	getArgs(argc, argv);
 
@@ -59,6 +43,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	print(graph, 0);
+	printf("valid: %d\n", isValid(graph));
 
 	//CPU COLOR
 	start = seconds();
@@ -115,79 +100,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-void getArgs(int argc, char* argv[]) {
 
-	int c;
-
-	while ((c = getopt(argc, argv, "n:p:w:r:")) != -1)
-		switch (c)
-		{
-		case 'n':
-			options.numberNodes = atoi(optarg);
-			if (options.toRead) {
-				printf("Usage: you can't use -n/-p and -r together");
-				exit(1);
-			}
-			else if (!options.numberNodes || options.numberNodes <= 0) {
-				printf("Error in number nodes arg, please use only positive numbers");
-			}
-			break;
-		case 'p':
-			options.probability = atof(optarg);
-			if (options.toRead) {
-				printf("Usage: you can't use -n/-p and -r together");
-				exit(1);
-			}
-			else if (!options.probability || options.probability <= 0) {
-				printf("Error in number probability arg, please use only positive numbers");
-			}
-			break;
-		case 'w':
-			if (options.toRead) {
-				printf("Usage: you can't use -w and -r together");
-				exit(1);
-			}
-			options.toWrite = true;
-			options.fileName = optarg;
-			break;
-		case 'r':
-			if (options.toWrite) {
-				printf("Usage: you can't use -w and -r together");
-				exit(1);
-			}
-			else if (options.numberNodes || options.probability) {
-				printf("Usage: you can't use -n/-p and -r together");
-				exit(1);
-			}
-			options.toRead = true;
-			options.fileName = optarg;
-			break;
-		case '?':
-			/*if (optopt == 'r')
-				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-			else if (isprint(optopt))
-				fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-			else
-				fprintf(stderr,
-					"Unknown option character `\\x%x'.\n",
-					optopt);*/
-			return;
-		default:
-			abort();
-		}
-
-	// Check mandatory parameters:
-	if ((!options.numberNodes || !options.probability) && !options.toRead) {
-		printf("Usage: you need to use -n/-p or -r");
-		exit(1);
-	}
-	else if ((!options.numberNodes && options.probability) || (options.numberNodes && !options.probability)) {
-		printf("Usage: -n/-p arg is missing");
-		exit(1);
-	}
-	printf("options: %s - %d - %d - %d - %f\n", options.fileName, options.toRead, options.toWrite, options.numberNodes, options.probability);
-	return;
-}
 
 
 

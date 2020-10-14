@@ -15,7 +15,7 @@ extern "C" {
 }
 #include "device_functions.h"
 
-#define THREADxBLOCK 128
+#define THREADxBLOCK 256
 
 
 Colorer* GpuColor(Graph* graph, int type) {
@@ -165,7 +165,7 @@ __global__ void colorMIS(Colorer* colorer, Graph* graph, uint* weights) {
 uint* managedRandomPermutation(uint n) {
 	uint* permutation;
 	CHECK(cudaMallocManaged(&permutation, n * sizeof(uint)));
-	//uint* permutation = (uint*)malloc(n * sizeof(uint));
+	
 	// initial range of numbers
 	for (int i = 0;i < n;++i) {
 		permutation[i] = i + 1;
@@ -225,7 +225,7 @@ __global__ void JPcolorer(Colorer* colorer, Graph* graph, uint* weights) {
 
 __global__ void JPfindIS(Colorer* colorer, Graph* graph, uint* weights) {
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
-	//uint numColors = colorer->numOfColors;
+	
 	if (idx >= graph->nodeSize)
 		return;
 

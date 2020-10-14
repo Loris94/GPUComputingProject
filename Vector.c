@@ -12,14 +12,6 @@ struct vector* vec_init() {
     return vec;
 }
 
-//struct vector* vec_init(int size) {
-//    struct vector* vec = (struct vector*)malloc(sizeof(struct vector));
-//    vec->capacity = size;
-//    vec->data = (T*)malloc(vec->capacity * sizeof(T));
-//    vec->size = 0;
-//    return vec;
-//}
-
 void vec_push(struct vector* vec, T item) {
     if (vec->size == vec->capacity) {
         
