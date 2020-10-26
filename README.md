@@ -8,12 +8,16 @@ After compiling the project it's possible to use the program to generate random 
 
 ```./GPUComputingProject -n 1000 -p 0.01```
 
-It's possible to write on a file the graph that will be created by adding the flag -w [filename]:
+It's possible to write on a file the graph that will be created by adding the flag -w [filename], the filename must contain the path:
 
-```./GPUComputingProject -n 1000 -p 0.01 -w [filename]```
+```./GPUComputingProject -n 1000 -p 0.01 -w [path/filename]```
 
 Or it's possible to read the graph directly from a file, if it has been created previously:
 
-```./GPUComputingProject -r [filename]```
+```./GPUComputingProject -r [path/filename]```
 
 For obvious reasons it isn't possible to use -w and -r together nor -r and -n/-p together.
+
+There are already some graphs ready for use in the graphs folder:
+
+```./GPUComputingProject -r graphs/n300kp000001```
