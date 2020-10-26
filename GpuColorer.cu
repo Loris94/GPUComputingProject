@@ -44,10 +44,7 @@ Colorer* GpuColor(Graph* graph, int type) {
 	// start coloring (dyn. parall.)
 	switch (type) {
 	case 0: // LUBY 
-		permutation = managedRandomPermutation(n);
-		LubyColorer <<< 1, 1 >>> (colorer, graph, permutation);
-		cudaDeviceSynchronize();
-		CHECK(cudaFree(permutation));
+		LubyColorer(colorer, graph);
 		break;
 	case 1: // JP
 		//CHECK(cudaMalloc((void**)&states, n * sizeof(curandState_t)));
@@ -71,34 +68,39 @@ Colorer* GpuColor(Graph* graph, int type) {
 		//cudaFree(states);
 		cudaFree(weigths);
 		break;
+	
 	}
+
 	
 	return colorer;
 }
 
-/*
-* Luby MIS colorer
-*/
-__global__ void LubyColorer(Colorer * colorer, Graph * graph, uint * permutation) {
+void LubyColorer(Colorer* colorer, Graph* graph) {
 	dim3 threads(THREADxBLOCK);
 	dim3 blocks((graph->nodeSize + threads.x - 1) / threads.x, 1, 1);
-
+	uint n = graph->nodeSize;
+	uint* permutation;
+	CHECK(cudaMallocManaged(&permutation, n * sizeof(uint)));
 	colorer->numOfColors = 0;
 	// loop on ISs covering the graph
 	while (colorer->uncoloredNodes) {
+		managedRandomPermutation(n, permutation);
 		colorer->uncoloredNodes = false;
 		colorer->numOfColors++;
 		while (colorer->misNotFound) {
 			colorer->misNotFound = false;
-			LubyfindMIS <<< blocks, threads >>> (colorer, graph, permutation);
+			LubyfindMIS << < blocks, threads >> > (colorer, graph, permutation);
 			cudaDeviceSynchronize();
-			RemoveNeighs <<< blocks, threads >>> (colorer, graph, permutation);
+			RemoveNeighs << < blocks, threads >> > (colorer, graph, permutation);
 			cudaDeviceSynchronize();
 		}
-		colorMIS <<< blocks, threads >>> (colorer, graph, permutation);
+		colorMIS << < blocks, threads >> > (colorer, graph, permutation);
 		cudaDeviceSynchronize();
 	}
+	CHECK(cudaFree(permutation));
 }
+
+
 
 __global__ void LubyfindMIS(Colorer* colorer, Graph* graph, uint* permutation) {
 	uint idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -162,10 +164,7 @@ __global__ void colorMIS(Colorer* colorer, Graph* graph, uint* weights) {
 
 }
 
-uint* managedRandomPermutation(uint n) {
-	uint* permutation;
-	CHECK(cudaMallocManaged(&permutation, n * sizeof(uint)));
-	
+ void  managedRandomPermutation(uint n, uint* permutation) {
 	// initial range of numbers
 	for (int i = 0;i < n;++i) {
 		permutation[i] = i + 1;
@@ -180,7 +179,6 @@ uint* managedRandomPermutation(uint n) {
 		permutation[i] = permutation[j];
 		permutation[j] = temp;
 	}
-	return permutation;
 }
 
 /**

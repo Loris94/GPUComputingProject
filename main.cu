@@ -43,7 +43,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	print(graph, 0);
-	printf("valid: %d\n", isValid(graph));
 
 	//CPU COLOR
 	start = seconds();
@@ -63,7 +62,6 @@ int main(int argc, char* argv[]) {
 	checkColors(colorer, graph, 0);
 	cudaFree(colorer);
 
-	
 	//GPU COLOR LUBY
 	start = seconds();
 	colorer = GpuColor(graph, 0);
